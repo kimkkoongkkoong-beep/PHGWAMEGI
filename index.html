@@ -5,10 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>포항과메기라이더스 | POHANG GWAMEGI RIDERS</title>
+    
+    <!-- 1. 스타일 및 폰트 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 에러가 없는 안정적인 Babel 버전 사용 -->
-    <script src="https://unpkg.com/@babel/standalone@7.23.12/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- 2. 환경 변수 더미 정의 (스크립트 실행 전 필수) -->
+    <script>
+      window.process = {
+        env: {
+          API_KEY: "" 
+        }
+      };
+    </script>
+
+    <!-- 3. 안정적인 Babel 버전 사용 -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.12/babel.min.js"></script>
+    
     <style>
         body {
             font-family: 'Pretendard', sans-serif;
@@ -20,25 +33,27 @@
             -webkit-tap-highlight-color: transparent;
         }
         .glass-morphism {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .orange-glow {
-            box-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.3);
         }
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
     </style>
+
+    <!-- 4. Import Map -->
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "lucide-react": "https://esm.sh/lucide-react@0.463.0",
     "@google/genai": "https://esm.sh/@google/genai@0.2.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
@@ -48,8 +63,23 @@
 </script>
 </head>
 <body>
-    <div id="root"></div>
-    <!-- data-type="module"을 추가하여 import 구문을 정상 지원하도록 함 -->
-    <script type="text/babel" data-type="module" data-presets="typescript,react" src="./index.tsx"></script>
+    <!-- 로딩 표시기 (JS가 로드되지 않을 경우 대비) -->
+    <div id="root">
+        <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #475569;">
+            <p>라이딩 준비 중...</p>
+        </div>
+    </div>
+
+    <!-- 
+      5. 핵심 해결책:
+      data-type="module"을 사용하되, Babel 7.23.12 버전에서 targets 에러가 발생하는 경우 
+      data-presets에서 env를 제외하고 typescript, react만 명시적으로 사용합니다.
+    -->
+    <script 
+      type="text/babel" 
+      data-type="module" 
+      data-presets="typescript,react" 
+      src="./index.tsx">
+    </script>
 </body>
 </html>
