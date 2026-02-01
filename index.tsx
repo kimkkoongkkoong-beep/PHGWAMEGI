@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { 
   Menu, X, Instagram, MessageCircle, 
@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
-// --- 데이터 정의 ---
+// --- 상수 데이터 통합 ---
 const CLUB_NAME = "포항과메기라이더스";
 const OPEN_CHAT_URL = "https://open.kakao.com/o/pgJRW5di";
 const INSTAGRAM_URL = "https://www.instagram.com/pohang_gwamegi_riders";
@@ -26,12 +26,12 @@ const TOUR_TIPS = [
   "헬멧 및 안전 보호구 필수 착용"
 ];
 
-// --- 앱 컴포넌트 ---
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
 
+  // 스크롤 함수
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -42,12 +42,19 @@ const App = () => {
     setIsMenuOpen(false);
   };
 
+  // AI 가이드 함수
   const handleAskAi = async () => {
     if (!aiMessage.trim()) return;
     setIsAiThinking(true);
     try {
-      // 브라우저 환경에서 안전하게 API KEY 가져오기
+      // API_KEY를 안전하게 가져오기 (GitHub Pages 환경 대응)
       const apiKey = (window as any).process?.env?.API_KEY || "";
+      
+      if (!apiKey) {
+        alert("AI 설정이 완료되지 않았습니다. 관리자에게 문의하세요.");
+        return;
+      }
+
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -55,6 +62,7 @@ const App = () => {
       });
       alert(response.text);
     } catch (error) {
+      console.error(error);
       alert("AI 라이더가 투어 중이라 응답을 못 하네요! 나중에 다시 물어봐주이소!");
     } finally {
       setIsAiThinking(false);
@@ -68,19 +76,19 @@ const App = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 glass-morphism px-6 py-4 flex justify-between items-center border-b border-white/5">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection('home')}>
           <div className="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center font-black text-white italic shadow-lg rotate-3">P</div>
-          <span className="font-extrabold tracking-tighter text-xl underline decoration-orange-500/30 underline-offset-4">과메기 <span className="text-orange-500">라이더스</span></span>
+          <span className="font-extrabold tracking-tighter text-xl">과메기 <span className="text-orange-500">라이더스</span></span>
         </div>
-        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-slate-300 active:scale-90 transition-transform">
+        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-slate-300">
           {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </nav>
 
       {/* 메뉴 오버레이 */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-slate-900/95 flex flex-col items-center justify-center gap-12 p-10 backdrop-blur-md">
-          <button onClick={() => scrollToSection('home')} className="text-4xl font-black italic hover:text-orange-500">HOME</button>
-          <button onClick={() => scrollToSection('rules')} className="text-4xl font-black italic hover:text-orange-500">RULES</button>
-          <button onClick={() => scrollToSection('map')} className="text-4xl font-black italic hover:text-orange-500">MAP</button>
+        <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center gap-12 p-10 animate-fade-in">
+          <button onClick={() => scrollToSection('home')} className="text-4xl font-black italic hover:text-orange-500 transition-colors">HOME</button>
+          <button onClick={() => scrollToSection('rules')} className="text-4xl font-black italic hover:text-orange-500 transition-colors">RULES</button>
+          <button onClick={() => scrollToSection('map')} className="text-4xl font-black italic hover:text-orange-500 transition-colors">MAP</button>
           <a href={OPEN_CHAT_URL} target="_blank" className="text-4xl font-black italic text-yellow-400">JOIN CHAT</a>
           <button onClick={() => setIsMenuOpen(false)} className="mt-12 p-4 rounded-full border border-white/10"><X size={32}/></button>
         </div>
@@ -103,7 +111,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* 규칙 섹션 */}
+      {/* 이용수칙 섹션 */}
       <section id="rules" className="py-24 px-6 max-w-lg mx-auto">
         <h2 className="text-3xl font-black mb-12 italic flex items-center gap-3">
           <ShieldCheck size={32} className="text-orange-500" /> 이용수칙
@@ -155,7 +163,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* AI 섹션 */}
+      {/* AI 가이드 섹션 */}
       <section className="py-24 px-6">
         <div className="max-w-lg mx-auto p-8 glass-morphism rounded-[2.5rem] border-orange-500/20">
           <h3 className="text-xl font-black mb-6 flex items-center gap-2">
@@ -183,10 +191,10 @@ const App = () => {
       {/* 하단 탭 바 */}
       <div className="fixed bottom-0 left-0 right-0 h-20 glass-morphism z-30 flex justify-around items-center px-4 border-t border-white/5">
         <button onClick={() => scrollToSection('home')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <MapPin size={22} /><span className="text-[10px] font-bold">HOME</span>
+          <MapPin size={22} /><span className="text-[10px] font-bold uppercase">Home</span>
         </button>
         <button onClick={() => scrollToSection('rules')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <ShieldCheck size={22} /><span className="text-[10px] font-bold">RULES</span>
+          <ShieldCheck size={22} /><span className="text-[10px] font-bold uppercase">Rules</span>
         </button>
         <div className="relative -top-6">
           <div className="absolute inset-0 bg-orange-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
@@ -198,10 +206,10 @@ const App = () => {
           </button>
         </div>
         <button onClick={() => scrollToSection('map')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <MapIcon size={22} /><span className="text-[10px] font-bold">MAP</span>
+          <MapIcon size={22} /><span className="text-[10px] font-bold uppercase">Map</span>
         </button>
         <button onClick={() => window.open(INSTAGRAM_URL, '_blank')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <Instagram size={22} /><span className="text-[10px] font-bold">SNS</span>
+          <Instagram size={22} /><span className="text-[10px] font-bold uppercase">Sns</span>
         </button>
       </div>
     </div>
