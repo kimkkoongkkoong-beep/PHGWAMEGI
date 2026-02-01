@@ -5,22 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>포항과메기라이더스 | 공식 가이드</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 폰트: Pretendard -->
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
     
-    <!-- 전역 환경 변수 정의 (스크립트 실행 전 최상단 필수) -->
     <script>
       window.process = { 
         env: { 
-          API_KEY: "" 
+          API_KEY: "" // 여기에 실제 API 키를 입력하면 AI 기능이 작동합니다.
         } 
       };
     </script>
 
-    <!-- 안정적인 Babel 버전 고정 -->
     <script src="https://unpkg.com/@babel/standalone@7.23.12/babel.min.js"></script>
     
     <style>
@@ -51,25 +47,24 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        
+        /* 로딩 스피너 애니메이션 */
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 
-    <!-- Import Map: 라이브러리 충돌 방지를 위해 중복 선언 제거 및 버전 고정 -->
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.463.0",
-    "@google/genai": "https://esm.sh/@google/genai@0.2.1",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.463.0",
+        "@google/genai": "https://esm.sh/@google/genai@0.2.1"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="root">
-        <!-- 초기 로딩 화면 -->
         <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0f172a; color: #f97316;">
             <div style="width: 40px; height: 40px; border: 4px solid #f97316; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
             <p style="font-weight: 800; letter-spacing: -0.05em; font-style: italic; margin: 0; font-size: 18px;">POHANG GWAMEGI RIDERS</p>
@@ -77,21 +72,289 @@
         </div>
     </div>
 
-    <style>
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+    <script type="text/babel" data-presets="typescript,react">
+        import React, { useState, useEffect } from 'react';
+        import ReactDOM from 'react-dom/client';
+        import { 
+            Menu, X, Instagram, MessageCircle, 
+            ShieldCheck, MapPin, Map as MapIcon, 
+            Sparkles, Users, Shield, MessageSquare, AlertTriangle,
+            ChevronRight, Navigation, Info
+        } from 'lucide-react';
+        import { GoogleGenAI } from "@google/genai";
 
-    <!-- 
-      핵심 해결책: 
-      GitHub Pages 환경에서 로컬 파일(App.tsx 등) 해석 오류를 방지하기 위해 
-      모든 로직이 통합된 index.tsx 하나만 로드합니다.
-      data-presets에서 env를 제거하여 targets 에러를 방지합니다.
-    -->
-    <script 
-      type="text/babel" 
-      data-type="module" 
-      data-presets="typescript,react" 
-      src="./index.tsx">
+        // --- [데이터 정의 영역] ---
+        const CLUB_NAME = "포항과메기라이더스";
+        const OPEN_CHAT_URL = "https://open.kakao.com/o/pgJRW5di";
+        const INSTAGRAM_URL = "https://www.instagram.com/pohang_gwamegi_riders";
+
+        const RULES = [
+            { id: '1', title: '상호 존중', desc: '나이, 기종 관계없이 존댓말 사용 및 예의 준수', icon: Users },
+            { id: '2', title: '정치/종교 언급 금지', desc: '분쟁 소지가 있는 민감한 주제 언급 자제', icon: MessageSquare },
+            { id: '3', title: '클린 채팅', desc: '욕설, 비방, 도배 금지 (위반 시 즉시 강퇴)', icon: Shield }
+        ];
+
+        const TOUR_TIPS = [
+            "집결 시간 10분 전 도착 엄수",
+            "출발 전 연료 가득 채우기",
+            "대열 주행 시 추월 절대 금지",
+            "헬멧 및 안전 보호구 필수 착용",
+            "로드마스터 수신호 및 지시 준수",
+            "투어 중 위치 공유(카카오맵) 확인"
+        ];
+
+        // --- [메인 애플리케이션 컴포넌트] ---
+        const App = () => {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [aiMessage, setAiMessage] = useState('');
+            const [isAiThinking, setIsAiThinking] = useState(false);
+            const [scrolled, setScrolled] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => setScrolled(window.scrollY > 30);
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const scrollToSection = (id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    const offset = 80;
+                    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                    window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                }
+                setIsMenuOpen(false);
+            };
+
+            const handleAskAi = async () => {
+                if (!aiMessage.trim()) return;
+                setIsAiThinking(true);
+                try {
+                    const apiKey = window.process?.env?.API_KEY || "";
+                    if (!apiKey) {
+                        alert("AI 가이드 이용을 위해 API 키 설정이 필요합니다.");
+                        return;
+                    }
+
+                    const ai = new GoogleGenAI({ apiKey });
+                    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" }); // 모델명 최신화
+                    
+                    const prompt = `질문: ${aiMessage}. 당신은 '포항과메기라이더스' 바이크 크루의 명예 회원입니다. 포항의 라이딩 코스나 맛집, 안전 규칙에 대해 경상도 사투리로 아주 씩씩하고 위트 있게 답변해주세요.`;
+                    
+                    const result = await model.generateContent(prompt);
+                    const response = await result.response;
+                    const text = response.text();
+                    
+                    alert(text);
+                } catch (error) {
+                    console.error("AI Error:", error);
+                    alert("AI 라이더가 투어 중이라 응답을 못 하네요! 잠시 후 다시 물어봐주이소! (API 키를 확인해주세요)");
+                } finally {
+                    setIsAiThinking(false);
+                    setAiMessage('');
+                }
+            };
+
+            return (
+                <div className="min-h-screen pb-24 bg-slate-900 text-slate-100 selection:bg-orange-500/30">
+                    
+                    {/* 1. 상단 네비게이션 */}
+                    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-6 py-4 flex justify-between items-center ${scrolled ? 'glass-morphism shadow-2xl py-3' : 'bg-transparent'}`}>
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection('home')}>
+                            <div className="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center font-black text-white italic shadow-lg rotate-3">P</div>
+                            <span className="font-extrabold tracking-tighter text-xl uppercase">Gwamegi <span className="text-orange-500 italic">Riders</span></span>
+                        </div>
+                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-slate-300 active:scale-90 transition-transform">
+                            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        </button>
+                    </nav>
+
+                    {/* 2. 메뉴 오버레이 */}
+                    {isMenuOpen && (
+                        <div className="fixed inset-0 z-[100] bg-slate-900/98 flex flex-col items-center justify-center gap-10 p-10 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200">
+                            <button onClick={() => scrollToSection('home')} className="text-4xl font-black italic tracking-tight hover:text-orange-500 transition-colors uppercase">Home</button>
+                            <button onClick={() => scrollToSection('rules')} className="text-4xl font-black italic tracking-tight hover:text-orange-500 transition-colors uppercase">Rules</button>
+                            <button onClick={() => scrollToSection('map')} className="text-4xl font-black italic tracking-tight hover:text-orange-500 transition-colors uppercase">Map</button>
+                            <a href={OPEN_CHAT_URL} target="_blank" rel="noopener noreferrer" className="text-4xl font-black italic tracking-tight text-yellow-400 uppercase">Join Chat</a>
+                            <button onClick={() => setIsMenuOpen(false)} className="mt-12 p-4 rounded-full border border-white/10 active:bg-white/5"><X size={32}/></button>
+                        </div>
+                    )}
+
+                    {/* 3. 히어로 섹션 */}
+                    <section id="home" className="h-[95vh] flex flex-col items-center justify-center relative px-6 text-center">
+                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1558981403-c5f91cbba527?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/20 via-slate-900/70 to-slate-900"></div>
+                        <div className="relative z-10 animate-slide-up">
+                            <div className="inline-block px-4 py-1.5 bg-orange-600/20 border border-orange-600/40 rounded-full text-orange-500 text-[10px] font-bold tracking-[0.3em] mb-8 uppercase">Safe & Passionate Riding</div>
+                            <h1 className="text-5xl sm:text-7xl font-black mb-8 leading-[1.05] italic tracking-tighter">
+                                포항의 파도를 가르는<br/>
+                                <span className="text-orange-500 underline decoration-white/10 underline-offset-8">과메기 라이더스</span>
+                            </h1>
+                            <p className="text-slate-400 text-base sm:text-xl mb-12 max-w-sm mx-auto font-medium leading-relaxed opacity-90">
+                                자유와 안전, 그리고 뜨거운 열정으로 달리는<br/>포항 최고의 모터사이클 크루입니다.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <a href={OPEN_CHAT_URL} target="_blank" rel="noopener noreferrer" className="bg-yellow-400 text-black font-black px-10 py-5 rounded-2xl shadow-2xl orange-glow transform active:scale-95 transition-all text-lg inline-flex items-center justify-center gap-3">
+                                    <MessageCircle size={24} /> 오픈채팅방 참여
+                                </a>
+                                <button onClick={() => scrollToSection('rules')} className="bg-slate-800 text-white font-bold px-10 py-5 rounded-2xl border border-white/10 transform active:scale-95 transition-all text-lg">
+                                    이용수칙 보기
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* 4. 이용수칙 섹션 */}
+                    <section id="rules" className="py-24 px-6 max-w-2xl mx-auto">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl font-black italic mb-4 flex justify-center items-center gap-4 uppercase tracking-tighter">
+                                <ShieldCheck size={40} className="text-orange-500" /> Club Rules
+                            </h2>
+                            <div className="w-12 h-1 bg-orange-600 mx-auto rounded-full mb-6"></div>
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em]">안전하고 즐거운 크루 활동을 위한 약속</p>
+                        </div>
+                        
+                        <div className="grid gap-6">
+                            {RULES.map((rule) => (
+                                <div key={rule.id} className="p-8 glass-morphism rounded-[2.5rem] flex gap-7 items-center hover:border-orange-500/40 transition-all group">
+                                    <div className="bg-orange-600/10 p-5 rounded-3xl text-orange-500 shrink-0 group-hover:scale-110 group-hover:bg-orange-600/20 transition-all duration-300">
+                                        <rule.icon size={32} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-2xl mb-2">{rule.title}</h3>
+                                        <p className="text-slate-400 text-sm sm:text-base leading-relaxed">{rule.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* 투어 팁 */}
+                        <div className="mt-16 p-10 bg-slate-800/40 border border-white/5 rounded-[3.5rem] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <Navigation size={150} />
+                            </div>
+                            <h3 className="font-black text-2xl mb-8 text-orange-500 flex items-center gap-3 italic">
+                                <Info size={28} /> 투어 에티켓 가이드
+                            </h3>
+                            <ul className="space-y-6 relative z-10">
+                                {TOUR_TIPS.map((tip, i) => (
+                                    <li key={i} className="flex items-start gap-4 text-base sm:text-lg text-slate-300">
+                                        <div className="mt-2.5 w-2 h-2 bg-orange-500 rounded-full shrink-0"></div>
+                                        <span className="hover:text-white transition-colors">{tip}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </section>
+
+                    {/* 5. 지도 섹션 */}
+                    <section id="map" className="py-24 px-6 bg-slate-900/80 border-y border-white/5">
+                        <div className="max-w-2xl mx-auto text-center mb-12">
+                            <h2 className="text-4xl font-black italic mb-4 flex justify-center items-center gap-4 uppercase tracking-tighter">
+                                <MapIcon size={40} className="text-orange-500" /> Riders Map
+                            </h2>
+                            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">포항 라이딩 집결지 및 추천 장소</p>
+                        </div>
+                        <div className="max-w-2xl mx-auto rounded-[3.5rem] overflow-hidden aspect-[3/4] border-4 border-slate-800 shadow-2xl bg-slate-800 relative group">
+                            <iframe 
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3234.346853761746!2d129.3626323762694!3d36.03503897247752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3567039a7b233a59%3A0x6a1006509424687d!2z7Y-s7ZWtIOyYgeydvOuMgA!5e0!3m2!1sko!2skr!4v1709428574000!5m2!1sko!2skr" 
+                                width="100%" 
+                                height="100%" 
+                                className="grayscale-[20%] contrast-[110%] group-hover:grayscale-0 transition-all duration-1000"
+                                style={{ border: 0 }}
+                                title="Pohang Riders Map"
+                                loading="lazy"
+                            ></iframe>
+                        </div>
+                        <p className="text-slate-500 text-center mt-8 text-xs font-medium italic">※ 지도를 확대하여 상세 집결지 정보를 확인하세요.</p>
+                    </section>
+
+                    {/* 6. AI 가이드 섹션 */}
+                    <section className="py-24 px-6">
+                        <div className="max-w-xl mx-auto p-12 glass-morphism rounded-[3.5rem] border-orange-500/20 shadow-2xl relative overflow-hidden">
+                            <div className="absolute -top-10 -left-10 w-32 h-32 bg-orange-600/10 blur-3xl rounded-full"></div>
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3">
+                                    <Sparkles size={24} />
+                                </div>
+                                <h3 className="text-3xl font-black italic tracking-tighter">AI 라이더 가이드</h3>
+                            </div>
+                            <p className="text-slate-400 text-sm sm:text-base mb-8 leading-relaxed font-medium">
+                                포항의 라이딩 코스, 맛집 등 궁금한 것이 있다면<br/>무엇이든 물어보이소! (Gemini AI 탑재)
+                            </p>
+                            <div className="space-y-4">
+                                <textarea 
+                                    rows={3}
+                                    value={aiMessage}
+                                    onChange={(e) => setAiMessage(e.target.value)}
+                                    placeholder="예: 호미곶 말고 한적한 해안도로 추천해줘!"
+                                    className="w-full bg-slate-900/80 border border-slate-700 rounded-[2rem] py-5 px-8 text-base focus:border-orange-500 outline-none transition-all placeholder:text-slate-600 text-white resize-none"
+                                />
+                                <button 
+                                    onClick={handleAskAi}
+                                    disabled={isAiThinking}
+                                    className="w-full bg-orange-600 hover:bg-orange-500 py-5 rounded-[2rem] font-black text-white text-lg shadow-xl disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    {isAiThinking ? (
+                                        <>
+                                            <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            분석 중...
+                                        </>
+                                    ) : "질문하기"}
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* 7. 하단 탭 바 */}
+                    <div className="fixed bottom-0 left-0 right-0 h-22 glass-morphism z-[60] flex justify-around items-center px-6 border-t border-white/5 pb-2">
+                        <button onClick={() => scrollToSection('home')} className="flex flex-col items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
+                            <MapPin size={24} /><span className="text-[10px] font-black tracking-tighter uppercase">Home</span>
+                        </button>
+                        <button onClick={() => scrollToSection('rules')} className="flex flex-col items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
+                            <ShieldCheck size={24} /><span className="text-[10px] font-black tracking-tighter uppercase">Rules</span>
+                        </button>
+                        <div className="relative -top-7">
+                            <div className="absolute inset-0 bg-orange-600 rounded-full blur-2xl opacity-40 animate-pulse"></div>
+                            <button 
+                                onClick={() => window.open(OPEN_CHAT_URL, '_blank')}
+                                className="relative w-18 h-18 bg-yellow-400 rounded-full flex items-center justify-center text-black shadow-2xl border-4 border-slate-900 transform active:scale-90 transition-transform"
+                            >
+                                <MessageCircle size={32} fill="currentColor" />
+                            </button>
+                        </div>
+                        <button onClick={() => scrollToSection('map')} className="flex flex-col items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
+                            <MapIcon size={24} /><span className="text-[10px] font-black tracking-tighter uppercase">Map</span>
+                        </button>
+                        <button onClick={() => window.open(INSTAGRAM_URL, '_blank')} className="flex flex-col items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
+                            <Instagram size={24} /><span className="text-[10px] font-black tracking-tighter uppercase">Sns</span>
+                        </button>
+                    </div>
+
+                    {/* 푸터 */}
+                    <footer className="py-16 px-6 text-center border-t border-white/5 bg-slate-950/50">
+                        <p className="text-slate-600 text-[11px] font-black tracking-[0.4em] uppercase mb-3">Pohang Gwamegi Riders</p>
+                        <p className="text-slate-700 text-[10px] font-medium leading-relaxed">
+                            Safe Riding, Safe Life.<br/>포항의 바람과 파도를 사랑하는 라이더들의 공간입니다.<br/>
+                            © 2024. All riders safe and sound.
+                        </p>
+                    </footer>
+                </div>
+            );
+        };
+
+        // --- [렌더링 실행] ---
+        const container = document.getElementById('root');
+        if (container) {
+            try {
+                const root = ReactDOM.createRoot(container);
+                root.render(<App />);
+                console.log("포항과메기라이더스 엔진 시동 완료! 부릉부릉!");
+            } catch (err) {
+                console.error("Critical Engine Failure:", err);
+                container.innerHTML = '<div style="color:red; text-align:center; padding:50px;">엔진 시동 실패. 관리자에게 문의하세요.</div>';
+            }
+        }
     </script>
 </body>
 </html>
