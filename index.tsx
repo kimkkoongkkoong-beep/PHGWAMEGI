@@ -8,7 +8,9 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
-// --- 상수 데이터 통합 ---
+console.log("포항과메기라이더스 앱 초기화 시작...");
+
+// --- 상수 및 설정 데이터 ---
 const CLUB_NAME = "포항과메기라이더스";
 const OPEN_CHAT_URL = "https://open.kakao.com/o/pgJRW5di";
 const INSTAGRAM_URL = "https://www.instagram.com/pohang_gwamegi_riders";
@@ -31,7 +33,7 @@ const App = () => {
   const [aiMessage, setAiMessage] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
 
-  // 스크롤 함수
+  // 섹션 스크롤 핸들러
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -42,27 +44,25 @@ const App = () => {
     setIsMenuOpen(false);
   };
 
-  // AI 가이드 함수
+  // AI 가이드 기능
   const handleAskAi = async () => {
     if (!aiMessage.trim()) return;
     setIsAiThinking(true);
     try {
-      // API_KEY를 안전하게 가져오기 (GitHub Pages 환경 대응)
       const apiKey = (window as any).process?.env?.API_KEY || "";
-      
       if (!apiKey) {
-        alert("AI 설정이 완료되지 않았습니다. 관리자에게 문의하세요.");
+        alert("AI 가이드 설정을 위해 API 키가 필요합니다.");
         return;
       }
 
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `질문: ${aiMessage}. 당신은 '포항과메기라이더스' 바이크 크루의 마스코트입니다. 포항 라이딩 코스나 안전 지식을 경상도 사투리로 아주 친절하고 씩씩하게 답해줘!`,
+        contents: `당신은 포항 바이크 크루 '포항과메기라이더스'의 마스코트입니다. 질문: ${aiMessage}. 경상도 사투리로 씩씩하고 친절하게 포항의 라이딩 정보나 안전 규칙을 설명해줘!`,
       });
       alert(response.text);
     } catch (error) {
-      console.error(error);
+      console.error("AI Error:", error);
       alert("AI 라이더가 투어 중이라 응답을 못 하네요! 나중에 다시 물어봐주이소!");
     } finally {
       setIsAiThinking(false);
@@ -72,29 +72,29 @@ const App = () => {
 
   return (
     <div className="min-h-screen pb-24 bg-slate-900 selection:bg-orange-500/30">
-      {/* 네비게이션 */}
+      {/* 1. 상단 네비게이션 */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass-morphism px-6 py-4 flex justify-between items-center border-b border-white/5">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection('home')}>
           <div className="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center font-black text-white italic shadow-lg rotate-3">P</div>
           <span className="font-extrabold tracking-tighter text-xl">과메기 <span className="text-orange-500">라이더스</span></span>
         </div>
-        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-slate-300">
+        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-slate-300 active:scale-95 transition-transform">
           {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </nav>
 
-      {/* 메뉴 오버레이 */}
+      {/* 2. 전체화면 메뉴 */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center gap-12 p-10 animate-fade-in">
+        <div className="fixed inset-0 z-[100] bg-slate-900/98 flex flex-col items-center justify-center gap-12 p-10 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
           <button onClick={() => scrollToSection('home')} className="text-4xl font-black italic hover:text-orange-500 transition-colors">HOME</button>
           <button onClick={() => scrollToSection('rules')} className="text-4xl font-black italic hover:text-orange-500 transition-colors">RULES</button>
           <button onClick={() => scrollToSection('map')} className="text-4xl font-black italic hover:text-orange-500 transition-colors">MAP</button>
           <a href={OPEN_CHAT_URL} target="_blank" className="text-4xl font-black italic text-yellow-400">JOIN CHAT</a>
-          <button onClick={() => setIsMenuOpen(false)} className="mt-12 p-4 rounded-full border border-white/10"><X size={32}/></button>
+          <button onClick={() => setIsMenuOpen(false)} className="mt-12 p-4 rounded-full border border-white/10 active:bg-white/5"><X size={32}/></button>
         </div>
       )}
 
-      {/* 히어로 섹션 */}
+      {/* 3. 히어로 섹션 */}
       <section id="home" className="h-[90vh] flex flex-col items-center justify-center relative px-6 text-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1558981403-c5f91cbba527?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-slate-900/60 to-slate-900"></div>
@@ -106,12 +106,12 @@ const App = () => {
           </h1>
           <p className="text-slate-400 text-base mb-10 max-w-xs mx-auto font-medium leading-relaxed">자유와 안전, 그리고 열정으로 달리는<br/>포항 최고의 바이크 크루</p>
           <a href={OPEN_CHAT_URL} target="_blank" className="bg-yellow-400 text-black font-black px-12 py-5 rounded-2xl orange-glow transform active:scale-95 transition-all text-lg shadow-xl inline-block">
-            오픈채팅방 바로가기
+            오픈채팅방 참여하기
           </a>
         </div>
       </section>
 
-      {/* 이용수칙 섹션 */}
+      {/* 4. 이용수칙 섹션 */}
       <section id="rules" className="py-24 px-6 max-w-lg mx-auto">
         <h2 className="text-3xl font-black mb-12 italic flex items-center gap-3">
           <ShieldCheck size={32} className="text-orange-500" /> 이용수칙
@@ -144,28 +144,28 @@ const App = () => {
         </div>
       </section>
 
-      {/* 지도 섹션 */}
+      {/* 5. 지도 섹션 */}
       <section id="map" className="py-24 px-6 bg-slate-800/20">
         <div className="max-w-lg mx-auto">
           <h2 className="text-3xl font-black mb-4 italic flex items-center gap-3">
             <MapIcon size={32} className="text-orange-500" /> 라이더 아지트
           </h2>
-          <p className="text-slate-500 text-sm mb-8 font-medium italic">집결지 및 추천 맛집 지도</p>
-          <div className="rounded-[2.5rem] overflow-hidden aspect-[4/5] border-2 border-white/10 shadow-2xl">
+          <p className="text-slate-500 text-sm mb-8 font-medium italic text-center">집결지 및 추천 맛집 지도</p>
+          <div className="rounded-[2.5rem] overflow-hidden aspect-[4/5] border-2 border-white/10 shadow-2xl bg-slate-800">
             <iframe 
               src="https://www.google.com/maps/d/embed?mid=1qiJWtAP_E66N5tqR6nhhluV1gMhf82g" 
               width="100%" 
               height="100%" 
-              className="grayscale-[30%] contrast-[110%]"
+              className="grayscale-[20%] contrast-[110%]"
               style={{ border: 0 }}
             ></iframe>
           </div>
         </div>
       </section>
 
-      {/* AI 가이드 섹션 */}
+      {/* 6. AI 섹션 */}
       <section className="py-24 px-6">
-        <div className="max-w-lg mx-auto p-8 glass-morphism rounded-[2.5rem] border-orange-500/20">
+        <div className="max-w-lg mx-auto p-8 glass-morphism rounded-[2.5rem] border-orange-500/20 shadow-2xl shadow-orange-500/5">
           <h3 className="text-xl font-black mb-6 flex items-center gap-2">
             <Sparkles className="text-orange-500" size={20} /> AI 라이더 가이드
           </h3>
@@ -174,8 +174,8 @@ const App = () => {
               type="text" 
               value={aiMessage}
               onChange={(e) => setAiMessage(e.target.value)}
-              placeholder="코스나 맛집을 물어보이소!"
-              className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-6 text-sm focus:border-orange-500 outline-none transition-all placeholder:text-slate-600"
+              placeholder="포항 코스나 맛집을 물어보이소!"
+              className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-4 px-6 text-sm focus:border-orange-500 outline-none transition-all placeholder:text-slate-600 text-white"
             />
             <button 
               onClick={handleAskAi}
@@ -188,13 +188,13 @@ const App = () => {
         </div>
       </section>
 
-      {/* 하단 탭 바 */}
-      <div className="fixed bottom-0 left-0 right-0 h-20 glass-morphism z-30 flex justify-around items-center px-4 border-t border-white/5">
+      {/* 7. 하단 탭 바 */}
+      <div className="fixed bottom-0 left-0 right-0 h-20 glass-morphism z-[60] flex justify-around items-center px-4 border-t border-white/5">
         <button onClick={() => scrollToSection('home')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <MapPin size={22} /><span className="text-[10px] font-bold uppercase">Home</span>
+          <MapPin size={22} /><span className="text-[10px] font-bold">HOME</span>
         </button>
         <button onClick={() => scrollToSection('rules')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <ShieldCheck size={22} /><span className="text-[10px] font-bold uppercase">Rules</span>
+          <ShieldCheck size={22} /><span className="text-[10px] font-bold">RULES</span>
         </button>
         <div className="relative -top-6">
           <div className="absolute inset-0 bg-orange-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
@@ -206,19 +206,22 @@ const App = () => {
           </button>
         </div>
         <button onClick={() => scrollToSection('map')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <MapIcon size={22} /><span className="text-[10px] font-bold uppercase">Map</span>
+          <MapIcon size={22} /><span className="text-[10px] font-bold">MAP</span>
         </button>
         <button onClick={() => window.open(INSTAGRAM_URL, '_blank')} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-orange-500 transition-colors">
-          <Instagram size={22} /><span className="text-[10px] font-bold uppercase">Sns</span>
+          <Instagram size={22} /><span className="text-[10px] font-bold">SNS</span>
         </button>
       </div>
     </div>
   );
 };
 
-// --- 렌더링 ---
+// --- 렌더링 엔진 시작 ---
 const container = document.getElementById('root');
 if (container) {
   const root = ReactDOM.createRoot(container);
   root.render(<App />);
+  console.log("React 앱이 성공적으로 마운트되었습니다.");
+} else {
+  console.error("Root element를 찾을 수 없습니다.");
 }
